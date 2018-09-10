@@ -8,7 +8,10 @@ class MyCamera():
 
 
     def init_camera(self):
-        cap = cv.VideoCapture(0)
+        #RTSP
+        cap = cv.VideoCapture("rtsp://184.72.239.149/vod/mp4:BigBuckBunny_115k.mov")
+        #System Camera
+        #cap = cv.VideoCapture(0)
         return cap
 
 
