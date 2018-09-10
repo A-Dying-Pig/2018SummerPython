@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 import cv2 as cv
 import pymysql
 import time
-
+import camera as ca
 
 
 app = Flask(__name__)
@@ -38,19 +38,17 @@ class test(db.Model):
 def index():
     return render_template('index.html')
 
-def video_stream():
+
+def video_stream(camera):
     while(1):
-        cap = cv.VideoCapture(0)
-        ret,frame = cap.read()
-        ret,jpeg = cv.imencode('.jpg', frame)
-        data = jpeg.tobytes()
+        data = camera.get_frame()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + data + b'\r\n')
 
 
 @app.route('/camera')
 def camera():
-    return Response(video_stream(),mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(video_stream(ca.MyCamera()),mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 #when the web service is over
@@ -62,4 +60,4 @@ def camera():
 
 
 if __name__ == '__main__':
-    app.run(debug=True,threaded=True)
+    app.run(threaded=True)
