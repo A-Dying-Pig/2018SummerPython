@@ -34,6 +34,8 @@ class test(db.Model):
 #db.session.add(test1)
 #db.session.commit()
 
+m_camera = ca.MyCamera()
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -46,10 +48,20 @@ def video_stream(camera):
                b'Content-Type: image/jpeg\r\n\r\n' + data + b'\r\n')
 
 
+def trace_moving_object_stream(camera):
+    while(1):
+        data = camera.get_tracking_frame()
+        if data:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + data + b'\r\n')
+
 @app.route('/camera')
 def camera():
-    return Response(video_stream(ca.MyCamera()),mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(video_stream(m_camera),mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/track_moving_object')
+def track_moving_object_camera():
+    return Response(trace_moving_object_stream(m_camera), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 #when the web service is over
 #@app.teardown_appcontext
