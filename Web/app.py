@@ -38,8 +38,11 @@ m_camera = ca.MyCamera()
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', entries={'video_id':1})
 
+@app.route('/track')
+def track():
+    return render_template('index.html', entries={'video_id':2})
 
 def video_stream(camera):
     while(1):
@@ -51,17 +54,41 @@ def video_stream(camera):
 def trace_moving_object_stream(camera):
     while(1):
         data = camera.get_tracking_frame()
-        if data:
+        if data is not None:
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + data + b'\r\n')
 
+
+@app.route('/track_camera')
+def track_camera():
+    #print("in tracking")
+    return Response(trace_moving_object_stream(m_camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/track_settings',methods=['POST'])
+def track_settings():
+    brightness = int(request.form.get('brightness'))
+    blur = int(request.form.get('blur'))
+    if brightness > 0 and brightness%2 == 1 and blur > 0 and blur < 256:
+        m_camera.track_setting(blur,brightness)
+    return redirect(url_for("track"))
+
+
+@app.route('/track_background',methods=['POST'])
+def track_reset_background():
+    m_camera.t_m_o.background_ready = False
+    return redirect(url_for("track"))
+
+
 @app.route('/camera')
 def camera():
+    #print("in camera")
     return Response(video_stream(m_camera),mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/track_moving_object')
-def track_moving_object_camera():
-    return Response(trace_moving_object_stream(m_camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+
+
 
 #when the web service is over
 #@app.teardown_appcontext

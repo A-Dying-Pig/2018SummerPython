@@ -1,35 +1,38 @@
 #--coding:utf-8--
 import cv2 as cv
 import numpy as np
+import time
 
 class TrackMovingObject():
     def __init__(self):
         self.background = None
-        self.WaitFrame = 100
-        self.CountFrame = 0
+        self.camera = cv.VideoCapture(0)
 
         #值越大，可以去掉更多的细节，必须是奇数
         self.blur_x = 21
         self.blur_y = 21
-        #值越小，就只能识别出和背景差异较大的物体
-        self.color_threshold = 100
+        #值越小，越敏感
+        self.color_threshold = 50
         #忽略过于小的物体
         self.min_area = 1500
         #矩形框的颜色[r,g,b]
-        self.FRAME_RGB = [0,245,255]
+        self.FRAME_RGB = [0, 245, 255]
+        self.background_ready = False
+        self.background_reset_time = 3
+
+
+    def set_background(self,frame):
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        gray = cv.GaussianBlur(gray, (self.blur_x, self.blur_y), 0)
+        self.background = gray
+        self.background_ready = True
 
 
     def process_frame(self,frame):
-        if self.CountFrame < self.WaitFrame:
-            self.CountFrame += 1
-            return None
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         gray = cv.GaussianBlur(gray, (self.blur_x, self.blur_y), 0)
-        if self.background is None:
-            self.background = gray
-            return None
         diff = cv.absdiff(self.background, gray)
-        diff = cv.threshold(diff, self.color_threshold, 255, cv.THRESH_BINARY_INV)[1]
+        diff = cv.threshold(diff, self.color_threshold, 255, cv.THRESH_BINARY)[1]
         diff = cv.dilate(diff, None, iterations=2)
         image, contours, hierarchy = cv.findContours(diff.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         for c in contours:
@@ -37,5 +40,6 @@ class TrackMovingObject():
                 continue
             (x, y, w, h) = cv.boundingRect(c)  # 该函数计算矩形的边界框
             cv.rectangle(frame, (x, y), (x + w, y + h), (self.FRAME_RGB[2],self.FRAME_RGB[1], self.FRAME_RGB[0]), 2)
-        return frame
+        ret, jpeg = cv.imencode('.jpg', frame)
+        return jpeg.tobytes()
 

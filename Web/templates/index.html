@@ -2,13 +2,28 @@
 <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
 <title>Camera</title>
 <body>
+    {% if entries.video_id == 1 %}
     <h1>流媒体播放</h1>
     <div class="video_stream">
-        <img src="{{ url_for('camera')}}">
+        <img src="{{ url_for('camera') }}">
     </div>
-    <h1>动态物体捕捉</h1>
-    <div class="track_moving_object">
+    {% elif entries.video_id == 2 %}
+
+     <div class="track_settings">
+        <form method="post" action="/track_settings">
+            高斯模糊值&nbsp;&nbsp;<input type="text" name="blur"> (请输入一个奇数)<br>
+            亮度阈值&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" name="brightness">(请输入一个1-255的整数)<br>
+            <input type="submit" value="确认修改">
+        </form>
+         <form method="post" action="/track_background">
+             <input type="submit" value="重新设置背景">
+         </form>
     </div>
 
+    <h1>动态物体捕捉</h1>
+    <div class="track_moving_object_stream">
+        <img src="{{ url_for('track_camera') }}">
+    </div>
+    {% endif %}
 
 </body>

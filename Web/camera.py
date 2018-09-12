@@ -17,7 +17,6 @@ import time
 from multiprocessing import Process,Lock,Queue
 
 
-
 class MyCamera():
 
     def __init__(self):
@@ -25,17 +24,15 @@ class MyCamera():
         self.height = 600
         self.width = 1067
         self.size = (self.width,self.height)
+
         #q1 for Process1
         self.q1 = Queue()
-        #q2_send,q2_receive for Process2
-        self.q2_send = Queue()
-        self.q2_receive = Queue()
 
-        pro1 = Process(target=ImageProcessProgress,args=(self.q1,))
+        self.t_m_o = tmo.TrackMovingObject()
+
+        pro1 = Process(target=ImageProcessProcess,args=(self.q1,))
         pro1.start()
 
-        pro2 = Process(target=TrackMovingObjectProgress,args=(self.q2_send,self.q2_receive))
-        pro2.start()
 
     def init_camera(self):
         #RTSP
@@ -52,38 +49,40 @@ class MyCamera():
         if self.q1.empty():
             temp = cv.cvtColor(frame_resize, cv.COLOR_BGR2RGB)
             self.q1.put(temp)
-        #process2
-        if self.q2_send.empty():
-            self.q2_send.put(frame_resize)
         ret, jpeg = cv.imencode('.jpg', frame_resize)
         return jpeg.tobytes()
 
 
     def get_tracking_frame(self):
-        if self.q2_receive.empty():
-            return None
+        if self.t_m_o.background_ready:
+            ret, frame = self.camera.read()
+            frame_resize = cv.resize(frame, (self.width, self.height))
+            # process1
+            if self.q1.empty():
+                temp = cv.cvtColor(frame_resize, cv.COLOR_BGR2RGB)
+                self.q1.put(temp)
+            jpeg = self.t_m_o.process_frame(frame_resize)
+            return jpeg
         else:
-            return self.q2_receive.get()
+            time.sleep(self.t_m_o.background_reset_time)
+            ret, frame = self.camera.read()
+            frame_resize = cv.resize(frame, (self.width, self.height))
+            self.t_m_o.set_background(frame_resize)
 
 
-def ImageProcessProgress(q):
+    def track_setting(self,blur,bri):
+        self.t_m_o.blur_x = blur
+        self.t_m_o.blur_y = blur
+        self.t_m_o.color_threshold = bri
+
+
+def ImageProcessProcess(q):
     ip = ImageProcess()
     while(1):
-        print("-----------IMAGE PROCESS-----------")
+        #print("-----------IMAGE PROCESS-----------")
         if not q.empty():
             img = q.get()
             ip.process(img)
-
-
-def TrackMovingObjectProgress(q_send,q_receive):
-    track = tmo.TrackMovingObject()
-    while(1):
-        print("-----------TRACK MOVING OBJECT-----------")
-        if not q_send.empty():
-            img = q_send.get()
-            img = track.process_frame(img)
-            q_receive.put(img)
-
 
 
 class ImageProcess():
@@ -97,9 +96,7 @@ class ImageProcess():
         image.save('output/' + filename)
 
     def process(self,img):
-        print("in process")
         #object detection
         img = self.object_detection.detect(img)
-
         #save
         self.save(img)
