@@ -15,6 +15,7 @@
             亮度阈值&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" name="brightness">(请输入一个1-255的整数)<br>
             <input type="submit" value="确认修改">
         </form>
+
          <form method="post" action="/track_background">
              <input type="submit" value="重新设置背景">
          </form>
@@ -26,4 +27,5 @@
     </div>
     {% endif %}
 
+     <h3> <a href="{{ url_for('index') }}"> 返回首页 </a></h3>
 </body>

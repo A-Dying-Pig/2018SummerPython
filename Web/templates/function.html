@@ -1,0 +1,20 @@
+<!doctype html>
+<title>Function</title>
+
+<body>
+    <h1> 功能列表</h1>
+    <form method="post" action="/logout">
+        <input type="submit" value="注销">
+    </form>
+    <div class="function_list">
+        <ul>
+            <li><a href="{{ url_for('pure_stream') }}">原视频流</a></li>
+            <li><a href="{{ url_for('track') }}">实时捕捉动态物体</a></li>
+            <li><a href="{{ url_for('change_password') }}">修改密码</a></li>
+            {% if entries.root == True%}
+            <li><a href="{{ url_for('root_add')}}"> 添加用户</a></li>
+            <li><a href="{{ url_for('root_check')}}"> 查看,删除用户 </a></li>
+            {% endif %}
+        </ul>
+    </div>
+</body>

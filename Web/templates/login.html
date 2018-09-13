@@ -1,0 +1,26 @@
+<!doctype html>
+<title>Login</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='login_style.css') }}">
+<body>
+    {% if entries.root == False %}
+    <h1 align="center">登陆</h1>
+    {% else %}
+    <h1 align="center">管理员登陆</h1>
+    {% endif %}
+
+    <div class="login">
+        <form method="post" action="/login">
+            用户名&nbsp;&nbsp;<input type="text" name="name"><br>
+            密码&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" name="password"><br>
+            <input type="submit" value="登陆">
+        </form>
+        <form method="post" action="/login_swift">
+            {% if entries.root == False %}
+                <input type="submit" value="管理员登陆">
+            {% else %}
+                <input type="submit" value="普通用户登陆">
+            {% endif %}
+
+        </form>
+    </div>
+</body>
