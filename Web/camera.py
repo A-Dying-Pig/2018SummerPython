@@ -1,6 +1,7 @@
 import cv2 as cv
 from PIL import Image
 import sys
+from flask_socketio import SocketIO
 
 #please change the path to the folder 'tensorflow'
 TENSORFLOW_DIR = "/anaconda2/lib/python2.7/site-packages/tensorflow"
@@ -19,7 +20,9 @@ from multiprocessing import Process,Lock,Queue
 
 class MyCamera():
 
-    def __init__(self):
+    def __init__(self,socketio,app):
+        self.socket = socketio
+        self.ap = app
         self.camera = self.init_camera()
         self.height = 600
         self.width = 1067
@@ -30,13 +33,14 @@ class MyCamera():
 
         self.t_m_o = tmo.TrackMovingObject()
 
-        pro1 = Process(target=ImageProcessProcess,args=(self.q1,))
+        pro1 = Process(target=ImageProcessProcess,args=(self.q1,self.socket,self.ap))
         pro1.start()
 
 
     def init_camera(self):
         #RTSP
         #cap = cv.VideoCapture("rtsp://184.72.239.149/vod/mp4:BigBuckBunny_115k.mov")
+        #cap = cv.VideoCapture("rtsp://admin:admin@59.66.68.38:554/cam/realmonitor?channel=1&subtype=0")
         #System Camera
         cap = cv.VideoCapture(0)
         return cap
@@ -76,8 +80,8 @@ class MyCamera():
         self.t_m_o.color_threshold = bri
 
 
-def ImageProcessProcess(q):
-    ip = ImageProcess()
+def ImageProcessProcess(q,socketio,app):
+    ip = ImageProcess(socketio,app)
     while(1):
         #print("-----------IMAGE PROCESS-----------")
         if not q.empty():
@@ -86,8 +90,8 @@ def ImageProcessProcess(q):
 
 
 class ImageProcess():
-    def __init__(self):
-        self.object_detection = od.Object_Detection()
+    def __init__(self,socketio,app):
+        self.object_detection = od.Object_Detection(socketio,app)
 
     def save(self,img):
         print('saving frame')

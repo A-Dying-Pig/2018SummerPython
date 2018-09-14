@@ -10,6 +10,7 @@ from collections import defaultdict
 from io import StringIO
 from PIL import Image
 import cv2 as cv
+from flask_sqlalchemy import SQLAlchemy
 #please change the path to the folder 'tensorflow'
 
 
@@ -30,7 +31,6 @@ if StrictVersion(tf.__version__) < StrictVersion('1.9.0'):
 from utils import label_map_util
 from utils import visualization_utils as vis_util
 
-
 # What model to download.
 MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
 MODEL_FILE = MODEL_NAME + '.tar.gz'
@@ -44,7 +44,9 @@ NUM_CLASSES = 90
 
 
 class Object_Detection():
-	def __init__(self):
+	def __init__(self,socket,ap):
+		self.socketio = socket
+		self.app = ap
 		#load model
 		self.detection_graph = tf.Graph()
 		with self.detection_graph.as_default():
@@ -59,7 +61,14 @@ class Object_Detection():
 		categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES,
 																	use_display_name=True)
 		self.category_index = label_map_util.create_category_index(categories)
+
+		#alert objects
+		self.alert_objects = [1,2]
+		with open('static/label.txt') as f:
+			self.labels = eval(f.read())
 		print("\nObject Detection is Ready!\n")
+
+
 
 	def load_image_into_numpy_array(self,image):
 		(im_width, im_height) = image.size
@@ -131,7 +140,17 @@ class Object_Detection():
 			self.category_index,
 			instance_masks=output_dict.get('detection_masks'),
 			use_normalized_coordinates=True,
-			line_thickness=8)
+			line_thickness=5)
+
+		#temp = []
+		#for i in output_dict['detection_classes']:
+		#	if i in self.alert_objects and i not in temp:
+		#		temp.append(i)
+		#		info = "WARNING: Object %s appeared!"%self.labels[str(i)]
+		#		with self.app.app_context():
+		#			self.socketio.emit('message',info,namespace='/warning')
+		#		print('\nmsg\n')
 		return image_np
+
 
 

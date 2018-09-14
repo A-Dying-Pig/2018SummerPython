@@ -7,9 +7,13 @@ import cv2 as cv
 import pymysql
 import time
 import camera as ca
+from flask_socketio import SocketIO
 
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)
+socketio.emit('message', {'data':'hello!'}, namespace='/warning')
 
 
 #database settings
@@ -20,6 +24,7 @@ app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 
 db_user = SQLAlchemy(app)
 db_root = SQLAlchemy(app)
+#db_warning = SQLAlchemy(app)
 class user(db_user.Model):
     __name__='user'
     username = db_user.Column(db_user.String(20), primary_key=True)
@@ -45,6 +50,19 @@ class rootuser(db_root.Model):
     def __repr__(self):
        return '<username %r,password %r>' % (self.username,self.password)
 
+
+#class warning(db_warning.Model):
+#    __name__='warning'
+#    id = db_root.Column(db_warning.INT(), primary_key=True,autoincrement=True)
+#    message = db_root.Column(db_warning.String(255))
+
+#    def __init__(self, id,message):
+#        self.id = id
+#        self.message = message
+
+#    def __repr__(self):
+#       return '<id %d,message %r>' % (self.id,self.message)
+
 #test1 = rootuser('root','1234')
 #db_root.session.add(test1)
 #db_root.session.commit()
@@ -55,7 +73,15 @@ class rootuser(db_root.Model):
 #print(ret.password)
 
 
-m_camera = ca.MyCamera()
+m_camera = ca.MyCamera(socketio,app)
+
+@app.route('/warning')
+def warning():
+    info = request.args.get('msg')
+    print('\n in@:' + info +'\n')
+    socketio.emit('message', info ,namespace='/warning')
+    return "warning has sent"
+
 
 @app.route('/')
 def index():
@@ -265,16 +291,5 @@ def camera():
     return Response(video_stream(m_camera),mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-
-
-
-#when the web service is over
-#@app.teardown_appcontext
-#def close_db(error):
-    #if hasattr(g,'sqlite_db'):
-        #g.sqlite_db.close()
-
-
-
 if __name__ == '__main__':
-    app.run(threaded=True,debug=True)
+    app.run(threaded=True)
